@@ -1,0 +1,93 @@
+# Data collection and curation of Twitter data
+This part of the repository contains information on how the social media data from Twitter and print media data from MediaCloud was collected and subsequently processed into the final, useful, data. 
+
+## Print media data collection
+
+Work-in-progress.
+
+## Print media data curation
+
+Work-in-progress.
+
+## Twitter data collection
+
+Work-in-progress.
+
+## Twitter data curation
+
+The raw data acquired via the Twitter API need to be processed before it can be used in the project. The first aspect was to allocate the data to a specific country. One can search and download data from Twitter for specific languages, but not countries. The obvious problem is then how to allocate e.g. tweets written in German, given that German is an official language also outside of Germany (e.g. Austria and Switzerland). Only 2% of tweets contains the geographical location through exact GPS coordinates ([van der Veen et al., 2015](https://doi.org/10.48550/arXiv.1508.02483)), and one therefore need to find alternative methods, to not exclude the majority of data collected. 
+
+### Cities & locations included in different countries (places_country.csv). 
+Although few users opt-in for sharing the GPS coordinates of their tweets, many users specify their location in their profile (either upon account creation or when updating their biography). This has been used to determine a users location [(Bruns et al.,2017)](https://doi.org/10.1177/2056305117748162). 
+
+We currently operate with an allowlist of places within a country, following the methodology of [Bruns et al. (2017)](https://doi.org/10.1177/2056305117748162). The, by the user, specified location is compared with a list of location from the relevant countries, and are either assigned to one of the countries, or excluded from the dataset altogether. Due to data availability, the country allowlists have to be constructed and verified differently, based on what data is available. 
+
+* For **Austria**, the places are sourced from [Wikipedia](https://en.wikipedia.org/wiki/List_of_cities_and_towns_in_Austria), and include NUTS2 and NUTS3 regions as well as municipalities (LAU2).
+* For **Denmark**, the places include 243 urban areas (_byområder_) in English from [Wikipedia](https://en.wikipedia.org/wiki/List_of_cities_and_towns_in_Denmark), municipalities and regions (NUTS2) from [Danmarks Statistik](https://www.statistikbanken.dk/tabsel/199114), urban areas in Danish from [Wikipedia](https://da.wikipedia.org/wiki/Danmarks_st%C3%B8rste_byer) as well as provinces (NUTS3) from [Eurostat](https://ec.europa.eu/eurostat/web/gisco/geodata/reference-data/administrative-units-statistical-units/nuts). This totals to 321 locations for Denmark. 
+* For **France**, the places are sourced from [Banatic](https://www.banatic.interieur.gouv.fr/V5/fichiers-en-telechargement/fichiers-telech.php) and available in English through the sublinks of [this Wikipedia page](https://en.wikipedia.org/wiki/Lists_of_communes_of_France). Currently, there is no verification of how much of the population is covered, however, it is known to be greater than 40%. With 6941 different locations, it is expected to be comprehensive. 
+* For **Germany**, the list contain 2055 cities and towns, sourced from [Wikipedia](https://en.wikipedia.org/wiki/List_of_cities_and_towns_in_Germany) in combination with all NUTS1 (Bundesländer), NUTS2 (Regierungsbezirk) and NUTS3 (Landkreis). 
+* For **Italy**, the places include all municipalities of the 107 provinces, resulting in 7817 places for Italy. These locations cover 100% of the population, according to data from [The Italian National Institute of Statistics](https://demo.istat.it/app/?i=D7B&a=2023&l=en)
+* For **Ireland**, include cities, boroughs and towns in Ireland, as well as provinces and historical counties. Additionally, in order to minimise the number of tweets falsely assigned from other countries in English, we actively exclude [states and cities with a population over 50,000 in the U.S](https://www.census.gov/data/tables/time-series/demo/popest/2020s-total-cities-and-towns.html), [locations and dwellings in Canada](https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001101), [major cities in the U.K](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=name&tags=NAC_TCITY)
+* For **Norway**, the places include _townships_ of at least 200 people within 50 meter of one another and covers at least 82.67% of the population, based on numbers from [Statistics Norway](https://www.ssb.no/befolkning/folketall/statistikk/tettsteders-befolkning-og-areal). 
+* For **Switzerland**, the places include all municipalities of Switzerland and cities of over 10,000 inhabitants. Data is sourced from [The Swiss Federal Statistical Office](https://www.bfs.admin.ch/bfs/en/home/basics/swiss-official-commune-register.assetdetail.6986904.html)
+
+### Data overview
+|             | Austria | Denmark | France | Germany | Italy | Ireland | Norway | Switzerland |
+| ----------- | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- |
+| Raw tweets (language-based)               | 1,097,818 | 79,571  | 1,943,353 | 1,097,818 | 313,188 | 4,544,328 | 118,439 | -       |
+| Excluded due to lack of geodata           | 368,722   | 22,515  | 648,304   | 368,722   | 114,351 | 1,060,235 | 31,769  | -       |
+| Tweets with geolocation (language-based)  | 729,091   | 57,056  | 1,295,049 | 729,091   | 198,837 | 3,484,093 | 86,670  | -       |
+| Tweets excluded due to illegible geodata  | 130,368   | 19,262  | 305,552   | 130,368   | 23,275  | 3,444,617 | 11,661  | -       |
+| Final sample of tweets (country-based)    | 43,439    | 37,769  | 965,840   | 487,823   | 158,039 | 39,476    | 74,996  | 79,099  |
+| Number of unique users                    | 7,377     | 6,264   | 129,749   | 54,551    | 34,290  | 12,311    | 7,939   | 13,972  |
+| Highest number of tweets from single user | 2,887     | 638     | 8,886     | 14,347    | 2,638   | 1,179     | 2,533   | 3,919   |
+| Tweets per million inhabitants            | 4,869     | 6,452   | 14,967    | 5,848     | 2,668   | 7,917     | 13,880  | 9100    |
+
+
+![sankey](../figures/sankey_mod.svg)
+
+#### Austria
+Duplicate cities removed: Altenburg, Auerbach, Berg, Bergheim, Burgau, Egg, Falkenstein, Friedberg, Krumbach, Lengenfeld, Lichtenberg, Liebenau, Meiningen, Moosburg, Mühldorf, Münster, Neunkirchen, Pottenstein,, Schlatt, Senftenberg, Stetten, Thal, Vals, Weißensee, Zell
+
+![at_temporal](../figures/AT_temporal.svg)
+![at_geospatial](../figures/at_geospatial.svg)
+
+#### Denmark
+![dk_temporal](../figures/DK_temporal.svg)
+![dk_geospatial](../figures/dk_geospatial.svg)
+
+#### Germany
+Duplicate cities removed: Altendorf, Frauenstein, Kirchberg, Speicher, Zell
+![de_temporal](../figures/DE_temporal.svg)
+![de_geospatial](../figures/de_geospatial.svg)
+
+#### France
+Duplicate cities removed: Aubonne, Berg, Bettlach, Breitenbach, Bulle, Cartigny, Chalais, Kappelen, Kirchberg, Lajoux, Lully, Perroy, St-Aubin, Saint-Barthélemy, Saint-Sulpice, Savigny, Tannay, Trimbach
+
+![fr_temporal](../figures/FR_temporal.svg)
+![fr_geospatial](../figures/fr_geospatial.svg)
+
+#### Ireland
+
+![ie_temporal](../figures/IR_temporal.svg)
+![ie_geospatial](../figures/ie_geospatial.svg)
+
+#### Italy
+Duplicate cities removed: Comano, Muzzano, Rossa, Villeneuve, 
+
+![it_temporal](../figures/IT_temporal.svg)
+![it_geospatial](../figures/it_geospatial.svg)
+
+#### Norway
+![no_temporal](../figures/NO_temporal.svg)
+![no_geospatial](../figures/no_geospatial.svg)
+
+#### Switzerland
+Duplicate cities removed in German: Buch, Burg, Büren, Burgdorf, Cham, Endingen, Feldbach, Felsberg, Fischbach, Fürstenau, Fürstenberg, Homberg, Horn, Koblenz, Laufen, Laufenburg, Lindau, Müllheim, Münsingen, Oberhof, Oberkirch, Olsberg, Rain, Reichenau, Rheinau, Rheinfelden, Rothenburg, Schlierbach, Schongau, Schwarzenberg, Stans, Stein, Steinach, Waldenburg, Waldkirch, Wildberg, 
+
+Duplicate cities removed in French: Champagne, Châtillon, Dizy, Gy, Hochfelden, Jussy, La Chaux, La Ferrière, Le Châtelard, Leimbach, Lens, Lignières, Montfaucon, Orges, Rochefort, Rougemont, Rue, Trun,
+
+Duplicate cities removed in Italian: Brione, Castro, Châtillon, Prato, Vernate,
+
+![ch_temporal](../figures/CH_temporal.svg)
+![ch_geospatial](../figures/ch_geospatial.svg)
