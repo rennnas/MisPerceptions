@@ -1,0 +1,215 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+rm(list=ls())
+```
+
+
+
+```{r}
+library(rvest)
+library(readxl)
+library(writexl)
+library(quanteda)
+library(readtext)
+library(readr)
+library(tidyverse)
+library(wordcloud2)
+library(quanteda.textplots)
+library(quanteda.textstats)
+library(ggplot2)
+library(tufte)
+library(kableExtra)
+library(topicmodels)
+library(LDAvis)
+library(servr)
+```
+
+```{r}
+dict_topic_de <- dictionary(list(
+  a_bird_bat = c(
+	"Vogel*",
+	"Flederm**"
+),
+	b_noise = c(
+	"Lärm*",
+	"Klang*",
+	"Gesundheit",
+	"Belästigung",
+	"Infraschall",
+	"Niederfrequenter Schall"
+	
+),
+	c_visual = c(
+	"visuell*",
+	"Landschaft*"
+),
+	d_central_decentral = c(
+	"zentral*",
+	"dezentral*"
+),
+  e_energy_integration = c(
+	"Energiesystemintegration",
+  "Speicherung",
+  "Leistungsbegrenzung*"
+),
+		f_participation = c(
+  "Beteiligung",
+  "Entscheidungsfindung",
+  "Bürger*",
+  "Gemeinschaft*"
+),
+		g_cost_externalization = c(
+		"Kostenexternalisierung",
+    "Abtausch*"
+),
+  h_equity_equality = c(
+		"Gerechtigkeit",
+		"Gleichheit",
+		"Gerechtigkeit"
+),
+		i_manufacturing = c(
+		"Materialien",
+		"Hersteller*",
+		"Beschaffung*"
+),
+  j_LCI_transport = c(
+		"Transport",
+		"Installation"
+),
+		k_LCI_end = c(
+		"end*of*life",
+		"Abfall",
+		"Recycling",
+		"entsorg*"
+),
+		l_land_tenure = c(
+		"Grundbesitz",
+		"Landrecht*",
+		"Grundstückseigentümer*",
+		"green grabbinge",
+		"Landkonflikt*",
+		"grüner Kolonialismus"
+),
+		m_planning_sitting = c(
+	"Synergie*",
+	"Mit*Nutzen*",
+	"Standortbestimmung",
+	"ubicazione"
+),
+
+		n_global_stilling_climate_effect = c(
+	"stilling",
+	 "Oberflächentemperatur*",
+  "Topoklima",
+  "Mikroklima"
+),
+		o_innovation = c(
+	"airborne",
+  "schwimmend*",
+  "neue Technologie*",
+  "Trend*",
+  "Innovation*",
+	"kite"
+),
+		p_long_planning = c(
+	"lange Planung",
+	"genehmig*",
+	"Genehmigung"
+),
+		q_indigenous_communities = c(
+	"einheimisch*",
+	"traditionelle Gemeinschaft*"
+)))
+
+```
+
+```{r}
+austria_tweets <- read.csv("austria_geolocated_2010_2022_anonymous.csv")
+```
+
+
+
+```{r}
+text_corpus_at_tweets <- corpus(austria_tweets, text_field = "text")
+text_dfm_at <- dfm(text_corpus_at_tweets, stem = TRUE, remove = stopwords("de"), remove_punct = TRUE)
+text_dfm_trim_at <- dfm_trim(text_dfm_at, min_termfreq = 10)
+wordcloud1_at <- textplot_wordcloud(text_dfm_trim_at, max_words = 50)
+
+```
+
+
+
+```{r}
+dict_topic_dtm_at_tweets <- dfm_lookup(text_dfm_at, dict_topic_de, exclusive = TRUE)
+
+```
+
+```{r}
+df_at_tw <- convert(dict_topic_dtm_at_tweets, to = "data.frame")
+```
+
+
+
+```{r}
+df3 <- df_at_tw %>%
+  mutate(a = ifelse(a_bird_bat >= 1, 1, 0))%>%
+  mutate(b = ifelse(b_noise >= 1, 1, 0))%>%
+  mutate(c = ifelse(c_visual >= 1, 1, 0))%>%
+  mutate(d = ifelse(d_central_decentral >= 1, 1, 0))%>%
+  mutate(e = ifelse(e_energy_integration >= 1, 1, 0))%>%
+  mutate(f = ifelse(f_participation >= 1, 1, 0))%>%
+  mutate(g = ifelse(g_cost_externalization >= 1, 1, 0))%>%
+  mutate(h = ifelse(h_equity_equality >= 1, 1, 0))%>%
+  mutate(i = ifelse(i_manufacturing >= 1, 1, 0))%>%
+  mutate(j = ifelse(j_LCI_transport >= 1, 1, 0))%>%
+  mutate(k = ifelse(k_LCI_end >= 1, 1, 0))%>%
+  mutate(l = ifelse(l_land_tenure >= 1, 1, 0))%>%
+  mutate(m = ifelse(m_planning_sitting >= 1, 1, 0))%>%
+  mutate(n_1 = ifelse(n_global_stilling_climate_effect >= 1, 1, 0))%>%
+  mutate(o = ifelse(o_innovation >= 1, 1, 0))%>%
+  mutate(p = ifelse(p_long_planning >= 1, 1, 0))%>%
+  mutate(q = ifelse(q_indigenous_communities >= 1, 1, 0))
+  
+```
+
+
+
+
+```{r}
+
+df_at_tweets <- df3 %>%
+  summarize(across(a:q, sum)) %>%
+  ungroup()
+
+```
+
+
+
+
+
+```{r}
+df_at_tweets <- df3 %>%
+  group_by(a, b, c, d, e, f, g, h, i, j, k, l, m, n_1, o, p, q) %>%
+  summarize(across(a:q, sum, na.rm = TRUE)) %>%
+  ungroup()
+
+```
+
+
+
+
+```{r}
+df4 <- df3 %>%
+  mutate(soma = a + b + c + d + e + f + g + h + i + j + k + l + m + n_1 + o + p + q) %>%
+  mutate(soma2 = if_else(soma >= 1, 1, 0))
+```
+
+```{r}
+df4 %>%
+  count(soma2)
+```

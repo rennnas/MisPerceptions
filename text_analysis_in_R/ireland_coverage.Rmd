@@ -1,0 +1,224 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+rm(list=ls())
+```
+
+
+```{r}
+library(rvest)
+library(readxl)
+library(writexl)
+library(quanteda)
+library(readtext)
+library(readr)
+library(tidyverse)
+library(wordcloud2)
+library(quanteda.textplots)
+library(quanteda.textstats)
+library(ggplot2)
+library(tufte)
+library(kableExtra)
+library(topicmodels)
+library(LDAvis)
+library(servr)
+```
+
+```{r}
+table_ireland <- read_excel("ie_titles.xlsx")
+```
+
+
+```{r}
+text_corpus <- corpus(table_ireland, text_field = "title")
+text_dfm <- dfm(text_corpus, stem = TRUE, remove = stopwords("en"), remove_punct = TRUE)
+text_dfm_trim <- dfm_trim(text_dfm, min_termfreq = 10)
+wordcloud1 <- textplot_wordcloud(text_dfm_trim, max_words = 50)
+
+```
+
+```{r}
+dict_topic_en <- dictionary(list(
+  a_bird_bat = c(
+	"bird*",
+	"bat*"
+),
+	b_noise = c(
+	"nois*",
+	"sound*",
+	"health",
+	"annoyance",
+	"infrasound",
+	"low-frequency sound"
+),
+	c_visual = c(
+	"visual",
+	"landscape",
+	"view"
+),
+		d_central_decentral = c(
+	"centralization",
+	"decentralizarion",
+	  "communit*"
+),
+  e_energy_integraton = c(
+	"energy system integration",
+  "storage",
+  "curtailment"
+),
+		f_participation = c(
+  "participation",
+  "decision*making",
+  "citizen*"
+),
+		g_cost_externalization = c(
+		"cost externalization",
+    "trade-offs"
+),
+  h_equity_equality = c(
+		"equity",
+		"equality"
+),
+		i_manufacturing = c(
+		"material*",
+		"manufact*",
+		"suppl*"
+),
+  j_LCI_transport = c(
+		"transport*",
+		"installation"
+),
+		k_LCI_end = c(
+		"end*of*life",
+		"waste",
+		"recyling"
+),
+		l_land_tenure = c(
+		"land*tenure",
+		"land rights",
+		"land owner*",
+		"green grabbing",
+		"land conflict*"
+),
+		m_planning_sitting = c(
+	"trade*off*",
+	"synerg*",
+	"co*benefit*",
+	"siting"
+),
+
+		n_global_stilling_climate_effect = c(
+	"stilling",
+	 "surface temperature*",
+  "topoclimate",
+  "microclimate"
+),
+		o_innovation = c(
+	"airborne",
+  "floating",
+  "novel technolog*",
+  "trend*",
+  "innovation*"
+),
+		p_long_planning = c(
+	"long planning",
+	"permit*",
+	"authorization",
+	"authorisation"
+),
+		q_indigenous_communities = c(
+	"indigenous",
+	"traditional communit*"
+)))
+
+```
+
+
+```{r}
+dict_topic_dtm <- dfm_lookup(text_dfm, dict_topic_en, exclusive = TRUE)
+
+```
+
+```{r}
+df1 <- convert(dict_topic_dtm, to = "data.frame")
+```
+
+
+```{r}
+df3 <- df1 %>%
+  mutate(a = ifelse(a_bird_bat >= 1, 1, 0))%>%
+  mutate(b = ifelse(b_noise >= 1, 1, 0))%>%
+  mutate(c = ifelse(c_visual >= 1, 1, 0))%>%
+  mutate(d = ifelse(d_central_decentral >= 1, 1, 0))%>%
+  mutate(e = ifelse(e_energy_integraton>= 1, 1, 0))%>%
+  mutate(f = ifelse(f_participation >= 1, 1, 0))%>%
+  mutate(g = ifelse(g_cost_externalization >= 1, 1, 0))%>%
+  mutate(h = ifelse(h_equity_equality >= 1, 1, 0))%>%
+  mutate(j = ifelse(j_manufacturing >= 1, 1, 0))%>%
+  mutate(k = ifelse(k_LCI_transport >= 1, 1, 0))%>%
+  mutate(l = ifelse(l_LCI_end >= 1, 1, 0))%>%
+  mutate(m = ifelse(m_land_tenure >= 1, 1, 0))%>%
+  mutate(n_1 = ifelse(n_planning_sitting >= 1, 1, 0))%>%
+  mutate(o = ifelse(o_global_stilling >= 1, 1, 0))%>%
+  mutate(p = ifelse(p_climate_effect >= 1, 1, 0))%>%
+  mutate(q = ifelse(q_innovation >= 1, 1, 0))%>%
+  mutate(r = ifelse(r_long_planning >= 1, 1, 0))%>%
+  mutate(s = ifelse(s_indigenous_communities >= 1, 1, 0))
+  
+```
+
+
+```{r}
+df_ie_ti_sum <- df3 %>%
+  group_by(a, b, c, d, ,e ,f, g, h, j, k, l, m, n_1, o, p, q, r, s) %>%
+  count()
+```
+
+
+
+
+```{r}
+df4 <- df3 %>%
+  mutate(soma = a + b + c + d + e + f + g + h + j + k + l + m + n_1 + o + p + q + r + s) %>%
+  mutate(soma2 = if_else(soma >= 1, 1, 0))
+```
+
+```{r}
+df4 %>%
+  count(soma2)
+```
+
+
+
+
+
+```{r}
+df4 <- df3 %>%
+  replace(is.na(.), 0) %>%
+  mutate(sum_row = rowSums(across(c(a,b,c,d,e,f,g,h,j,k,l,m,n_1,o,p,q,r,s)))) %>%
+  filter(sum_row > 0)
+```
+
+```{r}
+df2 <- df1 %>%
+group_by(a_bird_bat, b_noise, c_visual, d_central_decentral, e_energy_integraton, f_participation, g_cost_externalization, h_equity_equality, j_manufacturing, k_LCI_transport, l_LCI_end, m_land_tenure, n_planning_sitting, o_global_stilling, p_climate_effect, q_innovation, r_long_planning, s_indigenous_communities) %>%
+  summarise(n = n())
+```
+
+
+
+```{r}
+df2 <- df3 %>%
+group_by(s) %>%
+  summarise(n = n())
+```
+
+
+
+
+
+b_noise, c_visual, d_central_decentral, e_energy_integraton, f_participation, g_cost_externalization, h_equity_equality, j_manufacturing, k_LCI_transport, l_LCI_end, m_land_tenure, n_planning_sitting, o_global_stilling, p_climate_effect, q_innovation, r_long_planning, s_indigenous_communities

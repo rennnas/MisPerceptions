@@ -1,0 +1,175 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+rm(list=ls())
+```
+
+
+```{r}
+dict_topic_fr <- dictionary(list(
+  a_bird_bat = c(
+	"oiseau*",
+	"chauv*souris*"
+),
+	b_noise = c(
+	"bruit*",
+	"son*",
+	"santé",
+	"gêne",
+	"infrason*",
+	"son de basse fréquence"
+),
+	c_visual = c(
+	"visuel*",
+	"paysag*",
+	"voir"
+),
+		d_central_decentral = c(
+	"centralisation",
+	"décentralisation"
+),
+  e_energy_integration = c(
+	"'intégration*système énergétique",
+  "stockag*",
+  "riduzione"
+),
+		f_participation = c(
+  "participation",
+  "décision",
+  "citoyen*",
+  "communauté*"
+),
+		g_cost_externalization = c(
+		"externalisation des coût*",
+    "troquer*"
+),
+  h_equity_equality = c(
+		"équité",
+		"égalité"
+),
+		i_manufacturing = c(
+		"matér*",
+		"fabrication*",
+		"approvisionnement"
+),
+  j_LCI_transport = c(
+		"transport",
+		"installation"
+),
+		k_LCI_end = c(
+		"fin de vie",
+		"déchet*",
+		"recyclage",
+		"trait*"
+),
+		l_land_tenure = c(
+		"régime foncier*",
+		"droit*foncier*",
+		"propriétair* du terrain*",
+		"grillag* vert*",
+		"conflit foncier*",
+		"colonialisme vert"
+),
+		m_planning_sitting = c(
+	"synerg*",
+	"co*bénéfice*",
+	"emplacement"
+),
+
+		n_global_stilling_climate_effect = c(
+	"calmer",
+	 "température superficielle*",
+  "topoclimat",
+  "microclimat"
+),
+		o_innovation = c(
+	"aéroportée",
+  "'flottant*",
+  "nouvelle technologie*",
+  "innovation*",
+  "kite"
+),
+		p_long_planning = c(
+	"planification*long*",
+	"permis*",
+	"autorisation*"
+),
+		q_indigenous_communities = c(
+	"indigèn*",
+	"communauté traditionnelle*"
+)))
+
+```
+
+
+```{r}
+table_titles_fr <- read_excel("fr_titles.xlsx")
+```
+
+```{r}
+text_corpus_fr <- corpus(table_titles_fr, text_field = "title")
+text_dfm_fr <- dfm(text_corpus_fr, stem = TRUE, remove = stopwords("fr"), remove_punct = TRUE)
+text_dfm_trim_fr <- dfm_trim(text_dfm_fr, min_termfreq = 10)
+wordcloud1_fr <- textplot_wordcloud(text_dfm_trim_fr, max_words = 50)
+
+```
+
+
+
+```{r}
+dict_topic_dtm_fr <- dfm_lookup(text_dfm_fr, dict_topic_fr, exclusive = TRUE)
+
+```
+
+```{r}
+df_fr <- convert(dict_topic_dtm_fr, to = "data.frame")
+```
+
+```{r}
+df_fr_ti <- df_fr %>%
+  mutate(a = ifelse(a_bird_bat >= 1, 1, 0))%>%
+  mutate(b = ifelse(b_noise >= 1, 1, 0))%>%
+  mutate(c = ifelse(c_visual >= 1, 1, 0))%>%
+  mutate(d = ifelse(d_central_decentral >= 1, 1, 0))%>%
+  mutate(e = ifelse(e_energy_integration>= 1, 1, 0))%>%
+  mutate(f = ifelse(f_participation >= 1, 1, 0))%>%
+  mutate(g = ifelse(g_cost_externalization >= 1, 1, 0))%>%
+  mutate(h = ifelse(h_equity_equality >= 1, 1, 0))%>%
+  mutate(j = ifelse(j_manufacturing >= 1, 1, 0))%>%
+  mutate(k = ifelse(k_LCI_transport >= 1, 1, 0))%>%
+  mutate(l = ifelse(l_LCI_end >= 1, 1, 0))%>%
+  mutate(m = ifelse(m_land_tenure >= 1, 1, 0))%>%
+  mutate(n_1 = ifelse(n_planning_sitting >= 1, 1, 0))%>%
+  mutate(o = ifelse(o_global_stilling >= 1, 1, 0))%>%
+  mutate(p = ifelse(p_climate_effect >= 1, 1, 0))%>%
+  mutate(q = ifelse(q_innovation >= 1, 1, 0))%>%
+  mutate(r = ifelse(r_long_planning >= 1, 1, 0))%>%
+  mutate(s = ifelse(s_indigenous_communities >= 1, 1, 0))
+  
+```
+
+
+```{r}
+df3 <- df_fr_ti %>%
+  group_by(a, b, c, d, ,e ,f, g, h, j, k, l, m, n_1, o, p, q, r, s) %>%
+  count()
+```
+
+
+
+
+```{r}
+df4 <- df_fr_ti %>%
+  mutate(soma = a + b + c + d + e + f + g + h + j + k + l + m + n_1 + o + p + q + r + s) %>%
+  mutate(soma2 = if_else(soma >= 1, 1, 0))
+```
+
+```{r}
+df4 %>%
+  count(soma2)
+```
+

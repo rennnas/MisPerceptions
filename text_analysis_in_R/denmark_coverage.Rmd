@@ -1,0 +1,274 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(rvest)
+library(readxl)
+library(writexl)
+library(quanteda)
+library(readtext)
+library(readr)
+library(tidyverse)
+library(wordcloud2)
+library(quanteda.textplots)
+library(quanteda.textstats)
+library(ggplot2)
+library(tufte)
+library(kableExtra)
+library(topicmodels)
+library(LDAvis)
+library(servr)
+```
+
+```{r}
+table_denmark <- read_excel("denmark_titles.xlsx")
+```
+
+
+```{r}
+text_corpus <- corpus(table_denmark, text_field = "title")
+text_dfm <- dfm(text_corpus, stem = TRUE, remove = stopwords("danish"), remove_punct = TRUE)
+text_dfm_trim <- dfm_trim(text_dfm, min_termfreq = 10)
+wordcloud1 <- textplot_wordcloud(text_dfm_trim, max_words = 50)
+
+```
+
+```{r}
+dict_topic_no_bm <- dictionary(list(
+  a_bird_bat = c(
+	"flaggermus*"
+),
+	b_noise = c(
+	"bråk*",
+	"støy",
+	"lyd**"
+),
+	c_visual = c(
+	"visuell",
+	"landskap",
+	"utsikt"
+),
+		d_central_decentral = c(
+	"sentralisering",
+	"desentralisering"
+),
+  e_energy_integraton = c(
+	"energisystemintegrasjon",
+  "energilagring",
+  "lagring",
+  "reduksjon",
+	"minsking"
+),
+		f_participation = c(
+  "deltakelse",
+  "beslutningstaking",
+  "medborger",
+  "statsborger",
+  "fellesskap*"
+),
+		g_cost_externalization = c(
+		"eksternalisering av kostnader",
+    "avveining*"
+),
+  h_equity_equality = c(
+		"egenkapital",
+		"likestilling"
+),
+		j_manufacturing = c(
+		"materialer*",
+		"produsere*",
+		"forsyning**"
+),
+  k_LCI_transport = c(
+		"transportere",
+		"installasjon*"
+),
+		l_LCI_end = c(
+		"sluttfasen",
+		"Avfall",
+		"resirkulering"
+),
+		m_land_tenure = c(
+		"eiendomsrett",
+		"landrettigheter",
+		"grunneier*",
+		"grønn kolonialisme",
+		"land konflikt*"
+),
+		n_planning_sitting = c(
+	"avveining*",
+	"synerg*",
+	"mednytte",
+	"plassering"
+),
+
+		o_global_stilling = c(
+	"stilling"
+),
+		p_climate_effect = c(
+	 "overflatetemperatur*",
+  "topoklima",
+  "mikroklima"
+),
+		q_innovation = c(
+	"luftbåren",
+  "flytende",
+  "ny teknologi*",
+  "trend*",
+  "innovasjon*",
+	"høydevindkraft"
+),
+		r_long_planning = c(
+	"lang planlegging",
+	"tillate*",
+	"tillatelse",
+	"autorisasjon"
+),
+		s_indigenous_communities = c(
+	"Urfolk",
+	"tradisjonelt samfunn*"
+)))
+
+```
+
+
+```{r}
+dict_topic_dk <- dictionary(list(
+  a_bird_bat = c(
+	"fugl*",
+	"flaggermus*"
+),
+	b_noise = c(
+	"støj ",
+	"lyd**"
+),
+	c_visual = c(
+	"visuel",
+	"landskab",
+	"udsigt"
+),
+		d_central_decentral = c(
+	"centralisering",
+	"decentralisering"
+),
+  e_energy_integration = c(
+	"integration af energisystemer",
+  "lagring",
+  "reduktion"
+),
+		f_participation = c(
+  "deltagelse",
+  "beslutningstagning",
+  "borger*",
+  "fællesskab*"
+),
+		g_cost_externalization = c(
+		"eksternalisering af omkostninger",
+    "afvejning**"
+),
+  h_equity_equality = c(
+		"egenkapital",
+		"lighed"
+),
+		i_manufacturing = c(
+		"materialer*",
+		"fremstille*",
+		"supplere*"
+),
+  j_LCI_transport = c(
+		"transport",
+		"installation*"
+),
+		k_LCI_end = c(
+		"udtjent",
+		"affald",
+		"genbrug",
+		"disponere"
+),
+		l_land_tenure = c(
+		"jord*besiddelse",
+		"jordrettigheder",
+		"grundejer*",
+		"grøn kolonialisme",
+		"jord konflikt*"
+),
+		m_planning_sitting = c(
+	"afvejning*",
+	"synergi",
+	"plus *fordel*",
+	"placering"
+),
+
+		n_global_stilling_climate_effect = c(
+	"stilling",
+	 "overfladetemperatur**",
+  "topo klima",
+  "mikroklima"
+),
+		o_innovation = c(
+	"luftbårne",
+	"flydende",
+  "ny teknologi*",
+  "trend*",
+  "innovation*",
+	"drage"
+),
+		p_long_planning = c(
+	"langtids planlægning",
+	"tilladelse**",
+	"bemyndigelse"
+),
+		q_indigenous_communities = c(
+	"lokale",
+	"traditionelt fællesskab*"
+)))
+
+```
+
+
+
+
+
+```{r}
+dict_topic_dtm <- dfm_lookup(text_dfm, dict_topic_dk, exclusive = TRUE)
+
+```
+
+```{r}
+df1 <- convert(dict_topic_dtm, to = "data.frame")
+```
+
+
+```{r}
+df3 <- df1 %>%
+  mutate(a = ifelse(a_bird_bat >= 1, 1, 0))%>%
+  mutate(b = ifelse(b_noise >= 1, 1, 0))%>%
+  mutate(c = ifelse(c_visual >= 1, 1, 0))%>%
+  mutate(d = ifelse(d_central_decentral >= 1, 1, 0))%>%
+  mutate(e = ifelse(e_energy_integraton>= 1, 1, 0))%>%
+  mutate(f = ifelse(f_participation >= 1, 1, 0))%>%
+  mutate(g = ifelse(g_cost_externalization >= 1, 1, 0))%>%
+  mutate(h = ifelse(h_equity_equality >= 1, 1, 0))%>%
+  mutate(i = ifelse(i_manufacturing >= 1, 1, 0))%>%
+  mutate(j = ifelse(j_LCI_transport >= 1, 1, 0))%>%
+  mutate(k = ifelse(k_LCI_end >= 1, 1, 0))%>%
+  mutate(l = ifelse(l_land_tenure >= 1, 1, 0))%>%
+  mutate(m = ifelse(m_planning_sitting >= 1, 1, 0))%>%
+  mutate(n_1 = ifelse(n_global_stilling_climate_effect >= 1, 1, 0))%>%
+  mutate(o = ifelse(o_innovation >= 1, 1, 0))%>%
+  mutate(p = ifelse(p_long_planning >= 1, 1, 0))%>%
+  mutate(q = ifelse(q_indigenous_communities >= 1, 1, 0))
+  
+```
+
+
+```{r}
+df_dk_ti_sum <- df3 %>%
+  replace(is.na(.), 0) %>%
+  mutate(sum_row = rowSums(across(c(a,b,c,d,e,f,g,h,j,k,l,m,n_1,o,p,q,r,s)))) %>%
+  filter(sum_row > 0)
+```
+
